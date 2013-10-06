@@ -1,0 +1,10 @@
+{
+    "number":123,
+    "string":"string value 2",
+    "sub":{
+	"sub1":"sub value1",
+	"sub 1.5":["первое","второе","и третье"]
+	"sub2": 42.0
+    },
+    "array":[1,2,3]
+}
