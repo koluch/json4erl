@@ -25,6 +25,11 @@ parse_file_test() ->
 			   {"sub2",42.0}
 			  ]},
 		  {"array",[1,2,3]}],
-		 json4erl:parse_file(FileDir ++ "/test/test5.json", Options)).
+		 json4erl:parse_file(FileDir ++ "/test/test5.json", Options)),
+
+    %% Test utf16
+    Options2 = [{encoding, utf16_little}],
+    ?assertEqual([3133.7423, "Федорино \nгоре", ["subarray",1,2,3]], json4erl:parse_file(FileDir ++ "/test/test4_utf16.json", Options2))
+.
 
 

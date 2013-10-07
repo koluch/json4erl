@@ -41,6 +41,14 @@ parse_binary(Binary, Options) ->
 %% Internal functions
 call_encoding_module(Binary, utf8) ->
     {Parsed, {_RestBin, _Line, _Column}} = json4erl_parser_utf8:parse({0,0}, Binary, next_el, nil),
+    Parsed;
+
+call_encoding_module(Binary, utf16) ->
+    {Parsed, {_RestBin, _Line, _Column}} = json4erl_parser_utf16:parse({0,0}, Binary, next_el, nil),
+    Parsed;
+
+call_encoding_module(Binary, utf16_little) ->
+    {Parsed, {_RestBin, _Line, _Column}} = json4erl_parser_utf16_little:parse({0,0}, Binary, next_el, nil),
     Parsed.
 
 

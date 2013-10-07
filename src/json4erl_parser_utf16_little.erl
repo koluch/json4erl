@@ -23,6 +23,6 @@
 %% Created :  8 Oct 2013 by Nikolay Mavrenkov <koluch@koluch.ru>
 %%--------------------------------------------------------------------
 
--module(json4erl_parser_utf8).
--define(ENCODING, utf8).
+-module(json4erl_parser_utf16_little).
+-define(ENCODING, utf16-little).
 -include("json4erl_parser.hrl").
