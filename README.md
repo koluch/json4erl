@@ -8,7 +8,7 @@ Usage example:
 ```erlang
 > json4erl:parse(<<"[1,2,3]">>).
 {array,[{number,1},{number,2},{number,3}]}
-> json4erl:parse(<<"{\"answer\":42, \"options\":[\"forty two\",\"i don't know...\"]}">>).
+> json4erl:parse(<<"{\"answer\":42, \"options\":[\"forty two\",\"don't know...\"]}">>).
 {object,[{"answer",{number,42}},
          {"options",
           {array,[{string,"forty two"},{string,"I don't know..."}]}}]}
