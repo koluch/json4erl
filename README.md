@@ -1,5 +1,6 @@
 json4erl
 ===========
+[![Build Status](https://travis-ci.org/koluch/json4erl.png?branch=master)](https://travis-ci.org/koluch/json4erl)
 
 Simple JSON library for Erlang. Support parsing from JSON to Erlang data structure. Support UTF8, UTF16 and UTF32 encodings.
 
