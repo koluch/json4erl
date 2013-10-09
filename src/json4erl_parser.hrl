@@ -42,7 +42,7 @@ parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, next_el, Acc) ->
 %% String
 parse({Line,Column}, <<Ch/?ENCODING, Rest/binary>>, read_string, Acc) ->
     case Ch of
-        $" -> {lists:reverse(Acc), {Rest, Line, Column+1}};
+        $" -> {create_element(string, lists:reverse(Acc)), {Rest, Line, Column+1}};
         $\n -> parse({Line+1,Column}, Rest, read_string, [Ch|Acc]);
         _ -> parse({Line,Column+1}, Rest, read_string, [Ch|Acc])
     end;
@@ -58,14 +58,14 @@ parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_number, Acc) ->
                            {error, no_float} -> string:to_integer(Rev);
                            Float -> Float
                        end,
-            {Num, {Bin, Line, Column}}
+            {create_element(number, Num), {Bin, Line, Column}}
     end;
 
 
 %% Array
 parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_array_begin, Acc) ->
     case Ch of
-        $] -> {lists:reverse(Acc), {Rest, Line, Column}};
+        $] -> {create_element(array, lists:reverse(Acc)), {Rest, Line, Column}};
         _ -> 
             {El,{NewRest, NewLine, NewColumn}} = parse({Line,Column}, Bin, next_el, []),
             parse({NewLine, NewColumn+1}, NewRest, read_array, [El])
@@ -75,7 +75,7 @@ parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_array, Acc) ->
     case Ch of
         S when S=:=$ ;S=:=$\t -> parse({Line+1, Column}, Rest, read_array, Acc);
         $] -> 
-            {lists:reverse(Acc), {Rest, Line, Column}};
+            {create_element(array, lists:reverse(Acc)), {Rest, Line, Column}};
 	$, -> 
             {El,{NewRest, NewLine, NewColumn}} = parse({Line,Column}, Rest, next_el, []),
             parse({NewLine, NewColumn+1}, NewRest, read_array, [El|Acc]);
@@ -93,7 +93,7 @@ parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_object, Acc) ->
             {El,{NewRest, NewLine, NewColumn}} = parse({Line, Column}, Bin, read_object_pair, Acc),
             parse({NewLine, NewColumn+1}, NewRest, read_object, [El|Acc]);
         $} -> 
-            {lists:reverse(Acc), {Rest, Line, Column}};
+            {create_element(object, lists:reverse(Acc)), {Rest, Line, Column}};
         $, -> 
             {El,{NewRest, NewLine, NewColumn}} = parse({Line,Column}, Rest, read_object_pair, []),
             parse({NewLine, NewColumn+1}, NewRest, read_object, [El|Acc]);
@@ -111,3 +111,8 @@ parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_object_pair, Acc)
             {{Key,Value},NewContext};
         Ch -> throw({"Next char is not a first char of object key name!", {[Ch], {line, Line+1}, {column, Column}}})
     end.
+
+create_element(object, Data) -> {object, Data};
+create_element(array, Data) -> {array, Data};
+create_element(number, Data) -> {number, Data};
+create_element(string, Data) -> {string, Data}.

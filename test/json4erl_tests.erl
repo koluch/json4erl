@@ -13,23 +13,42 @@
 parse_file_test() ->
     FileDir = code:priv_dir(json4erl),
     Options = [{encoding, utf8}],
-    ?assertEqual("АБВ, russian", json4erl:parse_file(FileDir ++ "/test/test1.json",Options)),
-    ?assertEqual(["some string","another"], json4erl:parse_file(FileDir ++ "/test/test2.json",Options)),
-    ?assertEqual(3133.7423, json4erl:parse_file(FileDir ++ "/test/test3.json", Options)),
-    ?assertEqual([3133.7423, "Федорино \nгоре", ["subarray",1,2,3]], json4erl:parse_file(FileDir ++ "/test/test4.json", Options)),
-    ?assertEqual([{"number",123},
-		  {"string","string value 2"},
-		  {"sub", [
-			   {"sub1","sub value1"},
-			   {"sub 1.5",["первое","второе","и третье"]},
-			   {"sub2",42.0}
-			  ]},
-		  {"array",[1,2,3]}],
+    ?assertEqual({string, "АБВ, russian"}, json4erl:parse_file(FileDir ++ "/test/test1.json",Options)),
+
+    ?assertEqual({array, [{string, "some string"},
+			  {string, "another"}]}, json4erl:parse_file(FileDir ++ "/test/test2.json",Options)),
+
+    ?assertEqual({number, 3133.7423}, json4erl:parse_file(FileDir ++ "/test/test3.json", Options)),
+
+    ?assertEqual({array, [{number, 3133.7423},
+			  {string, "Федорино \nгоре"}, 
+			  {array, [{string,"subarray"},
+				   {number,1},
+				   {number,2},
+				   {number,3}]}]},
+		  json4erl:parse_file(FileDir ++ "/test/test4.json", Options)),
+
+    ?assertEqual({object, [{{string,"number"},{number, 123}},
+			   {{string,"string"},{string, "string value 2"}},
+			   {{string,"sub"},{object, [{{string,"sub1"},{string, "sub value1"}},
+						     {{string,"sub 1.5"},{array, [{string, "первое"},
+										  {string, "второе"},
+										  {string, "и третье"}]}},
+						     {{string,"sub2"}, {number, 42.0}}]}},
+			   {{string,"array"},{array,[{number,1},
+						     {number,2},
+						     {number,3}]}}]},
 		 json4erl:parse_file(FileDir ++ "/test/test5.json", Options)),
 
     %% Test utf16
     Options2 = [{encoding, utf16_little}],
-    ?assertEqual([3133.7423, "Федорино \nгоре", ["subarray",1,2,3]], json4erl:parse_file(FileDir ++ "/test/test4_utf16.json", Options2))
-.
+
+    ?assertEqual({array, [{number, 3133.7423},
+			  {string, "Федорино \nгоре"}, 
+			  {array, [{string,"subarray"},
+				   {number,1},
+				   {number,2},
+				   {number,3}]}]},
+		  json4erl:parse_file(FileDir ++ "/test/test4_utf16.json", Options2)).
 
 
