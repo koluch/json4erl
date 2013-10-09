@@ -23,7 +23,7 @@
 %% Created :  4 Oct 2013 by Nikolay Mavrenkov <koluch@koluch.ru>
 
 -module(json4erl).
--export([parse_file/1,parse_file/2, parse_binary/1, parse_binary/2]).
+-export([parse_file/1,parse_file/2, parse/1, parse/2]).
 
 -define(DEFAULT_OPTIONS, [{encoding,utf8}]).
 
@@ -32,10 +32,15 @@
 parse_file(FileName) -> parse_file(FileName, ?DEFAULT_OPTIONS).
 parse_file(FileName, Options) ->
     {ok, Binary} = file:read_file(FileName),
-    parse_binary(Binary, Options).
+    parse(Binary, Options).
 
-parse_binary(Binary) -> parse_binary(Binary, ?DEFAULT_OPTIONS).
-parse_binary(Binary, Options) -> 
+
+parse(Anything) -> 
+    parse(Anything, ?DEFAULT_OPTIONS).
+
+parse(String, Options) when is_list(String) -> 
+    parse(list_to_binary(String), Options);
+parse(Binary, Options) when is_binary(Binary) -> 
     call_encoding_module(Binary,  proplists:get_value(encoding, Options)).
 
 %% Internal functions
