@@ -26,6 +26,7 @@
 -define(ENCODING, utf8).
 -endif.
 
+
 parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, next_el, Acc) ->
     case Ch of
         S when S=:=$ ;S=:=$\t -> parse({Line,Column+1}, Rest, next_el, Acc); % skip spaces and tabs

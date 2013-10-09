@@ -56,8 +56,8 @@ parse_file_test() ->
                                             {number,3}]}}]},
                  json4erl:parse_file(FileDir ++ "/test/test5.json", Options)),
 
-    %% Test utf16
-    Options2 = [{encoding, utf16_little}],
+    %% Test encodings
+    Options2 = [{encoding, utf16}],
 
     ?assertEqual({array, [{number, 3133.7423},
                           {string, "Федорино \nгоре"}, 
@@ -65,6 +65,33 @@ parse_file_test() ->
                                    {number,1},
                                    {number,2},
                                    {number,3}]}]},
-                 json4erl:parse_file(FileDir ++ "/test/test4_utf16.json", Options2)).
+                 json4erl:parse_file(FileDir ++ "/test/test4_utf16.json", Options2)),
+
+    Options3 = [{encoding, utf16_little}],
+    ?assertEqual({array, [{number, 3133.7423},
+                          {string, "Федорино \nгоре"}, 
+                          {array, [{string,"subarray"},
+                                   {number,1},
+                                   {number,2},
+                                   {number,3}]}]},
+                 json4erl:parse_file(FileDir ++ "/test/test4_utf16_little.json", Options3)),
+
+    Options4 = [{encoding, utf32}],
+    ?assertEqual({array, [{number, 3133.7423},
+                          {string, "Федорино \nгоре"}, 
+                          {array, [{string,"subarray"},
+                                   {number,1},
+                                   {number,2},
+                                   {number,3}]}]},
+                 json4erl:parse_file(FileDir ++ "/test/test4_utf32.json", Options4)),
+
+    Options5 = [{encoding, utf32_little}],
+    ?assertEqual({array, [{number, 3133.7423},
+                          {string, "Федорино \nгоре"}, 
+                          {array, [{string,"subarray"},
+                                   {number,1},
+                                   {number,2},
+                                   {number,3}]}]},
+                 json4erl:parse_file(FileDir ++ "/test/test4_utf32_little.json", Options5)).
 
 
