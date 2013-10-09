@@ -1,4 +1,4 @@
-x%% -*- coding: utf-8; erlang-indent-level: 4; indent-tabs-mode: nil -*-
+%% -*- coding: utf-8; erlang-indent-level: 4; indent-tabs-mode: nil -*-
 %%-------------------------------------------------------------------
 %% @author Nikolay Mavrenkov <koluch@koluch.ru>
 %% @copyright (C) 2013, Nikolay Mavrenkov
