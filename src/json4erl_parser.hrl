@@ -108,11 +108,12 @@ parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_object_pair, Acc)
             {Key,{NewRest, NewLine, NewColumn}} = parse({Line,Column}, Bin, next_el, []),
             <<$:/?ENCODING,ValueBin/binary>> = NewRest,
             {Value,NewContext} = parse({NewLine,NewColumn}, ValueBin, next_el, []),
-            {{Key,Value},NewContext};
+            {{create_element(object_key, Key),Value},NewContext};
         Ch -> throw({"Next char is not a first char of object key name!", {[Ch], {line, Line+1}, {column, Column}}})
     end.
 
 create_element(object, Data) -> {object, Data};
+create_element(object_key, {string,Data}) -> Data;
 create_element(array, Data) -> {array, Data};
 create_element(number, Data) -> {number, Data};
 create_element(string, Data) -> {string, Data}.
