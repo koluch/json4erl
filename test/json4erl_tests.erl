@@ -3,7 +3,7 @@
 %% @author Nikolay Mavrenkov <koluch@koluch.ru>
 %% @copyright (C) 2013, Nikolay Mavrenkov
 %% @doc
-%% 
+%%
 %% @end
 %%-------------------------------------------------------------------
 %% Copyright 2013 Nikolay Mavrenkov
@@ -37,7 +37,7 @@ parse_file_test() ->
     ?assertEqual({number, 3133.7423}, json4erl:parse_file(FileDir ++ "/test/test3.json", Options)),
 
     ?assertEqual({array, [{number, 3133.7423},
-                          {string, "Федорино \nгоре"}, 
+                          {string, "Федорино \nгоре"},
                           {array, [{string,"subarray"},
                                    {number,1},
                                    {number,2},
@@ -53,14 +53,16 @@ parse_file_test() ->
                                             {"sub2", {number, 42.0}}]}},
                            {"array",{array,[{number,1},
                                             {number,2},
-                                            {number,3}]}}]},
+                                            {number,3}]}},
+                           {"positive boolean",{boolean,true}},
+                           {"negative boolean",{boolean,false}}]},
                  json4erl:parse_file(FileDir ++ "/test/test5.json", Options)),
 
     %% Test encodings
     Options2 = [{encoding, utf16}],
 
     ?assertEqual({array, [{number, 3133.7423},
-                          {string, "Федорино \nгоре"}, 
+                          {string, "Федорино \nгоре"},
                           {array, [{string,"subarray"},
                                    {number,1},
                                    {number,2},
@@ -69,7 +71,7 @@ parse_file_test() ->
 
     Options3 = [{encoding, utf16_little}],
     ?assertEqual({array, [{number, 3133.7423},
-                          {string, "Федорино \nгоре"}, 
+                          {string, "Федорино \nгоре"},
                           {array, [{string,"subarray"},
                                    {number,1},
                                    {number,2},
@@ -78,7 +80,7 @@ parse_file_test() ->
 
     Options4 = [{encoding, utf32}],
     ?assertEqual({array, [{number, 3133.7423},
-                          {string, "Федорино \nгоре"}, 
+                          {string, "Федорино \nгоре"},
                           {array, [{string,"subarray"},
                                    {number,1},
                                    {number,2},
@@ -87,7 +89,7 @@ parse_file_test() ->
 
     Options5 = [{encoding, utf32_little}],
     ?assertEqual({array, [{number, 3133.7423},
-                          {string, "Федорино \nгоре"}, 
+                          {string, "Федорино \nгоре"},
                           {array, [{string,"subarray"},
                                    {number,1},
                                    {number,2},

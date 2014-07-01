@@ -3,7 +3,7 @@
 %% @author Nikolay Mavrenkov <koluch@koluch.ru>
 %% @copyright (C) 2013, Nikolay Mavrenkov
 %% @doc
-%% 
+%%
 %% @end
 %%-------------------------------------------------------------------
 %% Copyright 2013 Nikolay Mavrenkov
@@ -36,7 +36,13 @@ parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, next_el, Acc) ->
         Dig when is_integer(Dig), Dig >= $0, Dig =< $9 -> parse({Line,Column}, Bin, read_number, []);
         $[ -> parse({Line,Column+1}, Rest, read_array_begin, []);
         ${ -> parse({Line,Column+1}, Rest, read_object, []);
-        Ch -> throw({"Next char is not a first char of any element (string, number, array or object)!", {[Ch], {line, Line+1}, {column, Column}}})
+        Ch ->
+            case re:run([Ch], "([tf])", []) of
+                nomatch ->
+                    throw({"Next char is not a first char of any element (string, number, array, object or boolean)!", {[Ch], {line, Line+1}, {column, Column}}});
+                {match, _} ->
+                    parse({Line,Column+1}, Rest, read_boolean, [Ch])
+            end
     end;
 
 
@@ -48,12 +54,27 @@ parse({Line,Column}, <<Ch/?ENCODING, Rest/binary>>, read_string, Acc) ->
         _ -> parse({Line,Column+1}, Rest, read_string, [Ch|Acc])
     end;
 
+%% Boolean
+parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_boolean, Acc) ->
+    case re:run([Ch], "([truefals])", []) of
+        nomatch ->
+            Val = lists:reverse(Acc),
+            if
+                Val =:= "true" orelse Val =:= "false" ->
+                    {create_element(boolean, list_to_atom(Val)), {Bin, Line, Column}};
+                true ->
+                    throw({"Next char is not a char of true/false boolean values!", {Val, {line, Line+1}, {column, Column}}})
+            end;
+        {match, _} ->
+            parse({Line,Column+1}, Rest, read_boolean, [Ch|Acc])
+    end;
+
 %% Number
 parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_number, Acc) ->
     case Ch of
         $. -> parse({Line,Column+1}, Rest, read_number, [Ch|Acc]);
         Dig when is_integer(Dig),Dig >= $0, Dig =< $9 -> parse({Line,Column+1}, Rest, read_number, [Ch|Acc]);
-        _ -> 
+        _ ->
             Rev = lists:reverse(Acc),
             {Num,[]} = case string:to_float(Rev) of
                            {error, no_float} -> string:to_integer(Rev);
@@ -67,7 +88,7 @@ parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_number, Acc) ->
 parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_array_begin, Acc) ->
     case Ch of
         $] -> {create_element(array, lists:reverse(Acc)), {Rest, Line, Column}};
-        _ -> 
+        _ ->
             {El,{NewRest, NewLine, NewColumn}} = parse({Line,Column}, Bin, next_el, []),
             parse({NewLine, NewColumn+1}, NewRest, read_array, [El])
     end;
@@ -75,12 +96,12 @@ parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_array_begin, Acc)
 parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_array, Acc) ->
     case Ch of
         S when S=:=$ ;S=:=$\t -> parse({Line+1, Column}, Rest, read_array, Acc);
-        $] -> 
+        $] ->
             {create_element(array, lists:reverse(Acc)), {Rest, Line, Column}};
-	$, -> 
+	$, ->
             {El,{NewRest, NewLine, NewColumn}} = parse({Line,Column}, Rest, next_el, []),
             parse({NewLine, NewColumn+1}, NewRest, read_array, [El|Acc]);
-	_ -> 
+	_ ->
             {El,{NewRest, NewLine, NewColumn}} = parse({Line,Column}, Bin, next_el, []),
             parse({NewLine, NewColumn+1}, NewRest, read_array, [El|Acc])
     end;
@@ -90,12 +111,12 @@ parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_object, Acc) ->
     case Ch of
         S when S=:=$ ;S=:=$\t -> parse({Line, Column+1}, Rest, read_object, Acc);
         $\n -> parse({Line+1, 0}, Rest, read_object, Acc);
-        $" -> 
+        $" ->
             {El,{NewRest, NewLine, NewColumn}} = parse({Line, Column}, Bin, read_object_pair, Acc),
             parse({NewLine, NewColumn+1}, NewRest, read_object, [El|Acc]);
-        $} -> 
+        $} ->
             {create_element(object, lists:reverse(Acc)), {Rest, Line, Column}};
-        $, -> 
+        $, ->
             {El,{NewRest, NewLine, NewColumn}} = parse({Line,Column}, Rest, read_object_pair, []),
             parse({NewLine, NewColumn+1}, NewRest, read_object, [El|Acc]);
         Ch -> throw({"Next char is not a first char of object key name!", {[Ch], {line, Line+1}, {column, Column}}})
@@ -105,7 +126,7 @@ parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_object_pair, Acc)
     case Ch of
         S when S=:=$ ;S=:=$\t -> parse({Line,Column+1}, Rest, read_object_pair, Acc);
         $\n -> parse({Line+1,0}, Rest, read_object_pair, Acc);
-        $" -> 
+        $" ->
             {Key,{NewRest, NewLine, NewColumn}} = parse({Line,Column}, Bin, next_el, []),
             <<$:/?ENCODING,ValueBin/binary>> = NewRest,
             {Value,NewContext} = parse({NewLine,NewColumn}, ValueBin, next_el, []),
@@ -117,4 +138,5 @@ create_element(object, Data) -> {object, Data};
 create_element(object_key, {string,Data}) -> Data;
 create_element(array, Data) -> {array, Data};
 create_element(number, Data) -> {number, Data};
-create_element(string, Data) -> {string, Data}.
+create_element(string, Data) -> {string, Data};
+create_element(boolean, Data) -> {boolean, Data}.

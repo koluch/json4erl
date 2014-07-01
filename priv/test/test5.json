@@ -6,5 +6,7 @@
 	"sub 1.5":["первое","второе","и третье"]
 	"sub2": 42.0
     },
-    "array":[1,2,3]
+    "array":[1,2,3],
+    "positive boolean":true,
+    "negative boolean":false
 }
