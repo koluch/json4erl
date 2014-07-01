@@ -29,9 +29,10 @@
 
 parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, next_el, Acc) ->
     case Ch of
-        S when S=:=$ ;S=:=$\t -> parse({Line,Column+1}, Rest, next_el, Acc); % skip spaces and tabs
+        S when S=:=$ ;S=:=$\t -> parse({Line,Column+1}, Rest, next_el, Acc); % skip spaces, tabs and \r char
         16#FEFF -> parse({Line,Column}, Rest,next_el, []);              % skip BOM
-        $\n -> parse({Line+1,0}, Rest, next_el, Acc);                        % increate line and zero columns for new lines
+        $\n -> parse({Line+1,0}, Rest, next_el, Acc);                   % increase line and zero columns for new lines
+        $\r -> parse({Line,0}, Rest, next_el, Acc);                   % increase line and zero columns for new lines
         $" -> parse({Line,Column+1}, Rest, read_string, []);
         Dig when is_integer(Dig), Dig >= $0, Dig =< $9 -> parse({Line,Column}, Bin, read_number, []);
         $[ -> parse({Line,Column+1}, Rest, read_array_begin, []);
@@ -50,6 +51,7 @@ parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, next_el, Acc) ->
 parse({Line,Column}, <<Ch/?ENCODING, Rest/binary>>, read_string, Acc) ->
     case Ch of
         $" -> {create_element(string, lists:reverse(Acc)), {Rest, Line, Column+1}};
+        $\r -> parse({Line,Column}, Rest, read_string, [Ch|Acc]);
         $\n -> parse({Line+1,Column}, Rest, read_string, [Ch|Acc]);
         _ -> parse({Line,Column+1}, Rest, read_string, [Ch|Acc])
     end;
@@ -95,13 +97,16 @@ parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_array_begin, Acc)
 
 parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_array, Acc) ->
     case Ch of
-        S when S=:=$ ;S=:=$\t -> parse({Line+1, Column}, Rest, read_array, Acc);
+        S when S=:=$ ;S=:=$\t -> parse({Line, Column+1}, Rest, read_array, Acc);
+        $\r -> parse({Line, Column}, Rest, read_array, Acc);
+        $\n -> parse({Line+1, Column}, Rest, read_array, Acc);
+
         $] ->
             {create_element(array, lists:reverse(Acc)), {Rest, Line, Column}};
-	$, ->
+	    $, ->
             {El,{NewRest, NewLine, NewColumn}} = parse({Line,Column}, Rest, next_el, []),
             parse({NewLine, NewColumn+1}, NewRest, read_array, [El|Acc]);
-	_ ->
+	    _ ->
             {El,{NewRest, NewLine, NewColumn}} = parse({Line,Column}, Bin, next_el, []),
             parse({NewLine, NewColumn+1}, NewRest, read_array, [El|Acc])
     end;
@@ -110,7 +115,8 @@ parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_array, Acc) ->
 parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_object, Acc) ->
     case Ch of
         S when S=:=$ ;S=:=$\t -> parse({Line, Column+1}, Rest, read_object, Acc);
-        $\n -> parse({Line+1, 0}, Rest, read_object, Acc);
+        $\n -> parse({Line+1, Column}, Rest, read_object, Acc);
+        $\r -> parse({Line, Column}, Rest, read_object, Acc);
         $" ->
             {El,{NewRest, NewLine, NewColumn}} = parse({Line, Column}, Bin, read_object_pair, Acc),
             parse({NewLine, NewColumn+1}, NewRest, read_object, [El|Acc]);
@@ -125,7 +131,8 @@ parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_object, Acc) ->
 parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_object_pair, Acc) ->
     case Ch of
         S when S=:=$ ;S=:=$\t -> parse({Line,Column+1}, Rest, read_object_pair, Acc);
-        $\n -> parse({Line+1,0}, Rest, read_object_pair, Acc);
+        $\n -> parse({Line+1,Column}, Rest, read_object_pair, Acc);
+        $\r -> parse({Line, Column}, Rest, read_object_pair, Acc);
         $" ->
             {Key,{NewRest, NewLine, NewColumn}} = parse({Line,Column}, Bin, next_el, []),
             <<$:/?ENCODING,ValueBin/binary>> = NewRest,
