@@ -37,13 +37,8 @@ parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, next_el, Acc) ->
         Dig when is_integer(Dig), Dig >= $0, Dig =< $9 -> parse({Line,Column}, Bin, read_number, []);
         $[ -> parse({Line,Column+1}, Rest, read_array_begin, []);
         ${ -> parse({Line,Column+1}, Rest, read_object, []);
-        Ch ->
-            case re:run([Ch], "([tf])", []) of
-                nomatch ->
-                    throw({"Next char is not a first char of any element (string, number, array, object or boolean)!", {[Ch], {line, Line+1}, {column, Column}}});
-                {match, _} ->
-                    parse({Line,Column+1}, Rest, read_boolean, [Ch])
-            end
+        B when B =:= $t; B =:= $f -> parse({Line,Column+1}, Rest, read_boolean, [Ch]);
+        _ -> throw({"Next char is not a first char of any element (string, number, array, object or boolean)!", {[Ch], {line, Line+1}, {column, Column}}})
     end;
 
 
@@ -58,17 +53,17 @@ parse({Line,Column}, <<Ch/?ENCODING, Rest/binary>>, read_string, Acc) ->
 
 %% Boolean
 parse({Line,Column}, Bin = <<Ch/?ENCODING, Rest/binary>>, read_boolean, Acc) ->
-    case re:run([Ch], "([truefals])", []) of
-        nomatch ->
+    case Ch of
+        _ when Ch =:= $t; Ch =:= $r; Ch =:= $u; Ch =:= $e;
+               Ch =:= $f; Ch =:= $a; Ch =:= $l; Ch =:= $s ->
+            parse({Line,Column+1}, Rest, read_boolean, [Ch|Acc]);
+        _ ->
             Val = lists:reverse(Acc),
-            if
-                Val =:= "true" orelse Val =:= "false" ->
+            if Val =:= "true" orelse Val =:= "false" ->
                     {create_element(boolean, list_to_atom(Val)), {Bin, Line, Column}};
-                true ->
-                    throw({"Next char is not a char of true/false boolean values!", {Val, {line, Line+1}, {column, Column}}})
-            end;
-        {match, _} ->
-            parse({Line,Column+1}, Rest, read_boolean, [Ch|Acc])
+            true ->
+                throw({"Next char is not a char of true/false boolean values!", {Val, {line, Line+1}, {column, Column}}})
+            end
     end;
 
 %% Number
